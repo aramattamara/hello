@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func main() {
+func main5() {
 	// open files r and w
 	r, err := os.Open("input.txt")
 	if err != nil {

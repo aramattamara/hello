@@ -1,6 +1,6 @@
 package main
 
-import "fmt"
+import "log"
 
 //	func main() {
 //		fmt.Println("Hello, World!")
@@ -12,6 +12,7 @@ func split(sum int) (x, y int) {
 	return
 }
 
-func main() {
-	fmt.Println(split(17))
+func main3() {
+	x, y := split(17)
+	log.Printf("%v, %v", x, y)
 }

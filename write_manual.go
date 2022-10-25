@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func main() {
+func main4() {
 	row, err := os.Open("input.txt")
 	if err != nil {
 		panic(err)
@@ -25,4 +25,6 @@ func main() {
 	}
 
 	log.Printf("Copied %v bytes\n", n)
+
+	main2()
 }
