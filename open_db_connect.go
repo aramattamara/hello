@@ -30,5 +30,5 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
-	fmt.Printf("isert is succesful %v", res)
+	fmt.Printf("insert is succesful %v", res)
 }
