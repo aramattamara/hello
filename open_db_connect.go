@@ -25,4 +25,10 @@ func main() {
 		log.Fatalf("unable to reach database: %v", err)
 	}
 	fmt.Println("database is reachable")
+
+	res, err := db.Exec("INSERT INTO test VALUES(?)", "gbhyv")
+	if err != nil {
+		log.Fatalf("unable to insert data in database: %v", err)
+	}
+	fmt.Printf("isert is succesful %v", res)
 }
