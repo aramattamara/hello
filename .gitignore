@@ -1,3 +1,6 @@
 db.sqlite
 logs.txt
 output.txt
+input.txt
+
+.idea/misc.xml
