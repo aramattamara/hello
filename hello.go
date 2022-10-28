@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	// we have to import the driver, but don't use it in our code
 	// so we use the `_` symbol
@@ -17,12 +19,15 @@ import (
 //	}
 
 func main() {
-	//callhttp()
-	//dbconnect()
+	result := callhttp()
+	dbconnect(result)
 }
 
-func callhttp() {
-	resp, err := http.Get("https://pkg.go.dev/net/http#pkg-overview")
+func callhttp() string {
+	token := read_token()
+	url := "https://api.telegram.org/bot" + token + "/getUpdates"
+
+	resp, err := http.Get(url)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -34,11 +39,10 @@ func callhttp() {
 	//Convert the body to type string
 	sb := string(body)
 	log.Printf(sb)
+	return sb
 }
 
-func sendsqldata() {}
-
-func dbconnect() {
+func dbconnect(sb string) {
 	// The `sql.Open` function opens a new `*sql.DB` instance. We specify the driver name
 	// and the URI for our database. Here, we're using a Postgres URI
 	db, err := sql.Open("sqlite3", "db.sqlite")
@@ -53,9 +57,28 @@ func dbconnect() {
 	}
 	fmt.Println("database is reachable")
 
-	res, err := db.Exec("INSERT INTO test VALUES(?)", "gbhyv")
+	res, err := db.Exec("INSERT INTO test VALUES(?)", sb)
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
 	fmt.Printf("insert is succesful %v", res)
+}
+
+func read_token() string {
+	readFile, err := os.Open("token.txt")
+	if err != nil {
+		fmt.Println(err)
+		return ""
+	}
+	defer readFile.Close()
+
+	fileScanner := bufio.NewScanner(readFile)
+
+	fileScanner.Split(bufio.ScanLines)
+
+	for fileScanner.Scan() {
+		token := fileScanner.Text()
+		return token
+	}
+	return ""
 }
