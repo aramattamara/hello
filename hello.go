@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -20,7 +21,14 @@ import (
 
 func main() {
 	result := callhttp()
-	dbconnect(result)
+	//save_to_sqlite(result)
+
+	parsed, err := parse_json(result)
+	if err != nil {
+		fmt.Printf("error while parsing json %v\n", err)
+		return
+	}
+	log.Printf("res: %v\n", parsed)
 }
 
 func callhttp() string {
@@ -38,11 +46,11 @@ func callhttp() string {
 	}
 	//Convert the body to type string
 	sb := string(body)
-	log.Printf(sb)
+	log.Printf("received: %v\n", sb)
 	return sb
 }
 
-func dbconnect(sb string) {
+func save_to_sqlite(sb string) {
 	// The `sql.Open` function opens a new `*sql.DB` instance. We specify the driver name
 	// and the URI for our database. Here, we're using a Postgres URI
 	db, err := sql.Open("sqlite3", "db.sqlite")
@@ -61,7 +69,7 @@ func dbconnect(sb string) {
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
-	fmt.Printf("insert is succesful %v", res)
+	fmt.Printf("insert is succesful %v\n", res)
 }
 
 func read_token() string {
@@ -81,4 +89,22 @@ func read_token() string {
 		return token
 	}
 	return ""
+}
+
+func parse_json(sb string) (*Response, error) {
+	bb := []byte(sb)
+	result := &Response{}
+	err := json.Unmarshal(bb, result)
+
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+type Response struct {
+	Ok     bool
+	Result []any
 }
