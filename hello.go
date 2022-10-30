@@ -106,5 +106,10 @@ func parse_json(sb string) (*Response, error) {
 
 type Response struct {
 	Ok     bool
-	Result []any
+	Result []Update
+}
+
+type Update struct {
+	UpdateId int64 `json:"update_id"`
+	Message  any
 }
