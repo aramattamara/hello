@@ -32,8 +32,11 @@ func main() {
 }
 
 func callhttp() string {
-	token := read_token()
-	url := "https://api.telegram.org/bot" + token + "/getUpdates"
+	token, err := readToken()
+	if err != nil {
+		log.Panicf("Cannot get token: %v", err)
+	}
+	url := "https://api.telegram.org/bot" + *token + "/getUpdates"
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -72,11 +75,12 @@ func save_to_sqlite(sb string) {
 	fmt.Printf("insert is succesful %v\n", res)
 }
 
-func read_token() string {
-	readFile, err := os.Open("token.txt")
+func readToken() (*string, error) {
+	fileName := "token.txt"
+	readFile, err := os.Open(fileName)
 	if err != nil {
 		fmt.Println(err)
-		return ""
+		return nil, err
 	}
 	defer readFile.Close()
 
@@ -86,30 +90,23 @@ func read_token() string {
 
 	for fileScanner.Scan() {
 		token := fileScanner.Text()
-		return token
+		return &token, nil
 	}
-	return ""
+	err = fmt.Errorf("nothing in file %v", fileName)
+	return nil, err
 }
 
 func parse_json(sb string) (*Response, error) {
 	bb := []byte(sb)
-	result := &Response{}
-	err := json.Unmarshal(bb, result)
+
+	response := &Response{}
+
+	err := json.Unmarshal(bb, response)
 
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
 	}
 
-	return result, nil
-}
-
-type Response struct {
-	Ok     bool
-	Result []Update
-}
-
-type Update struct {
-	UpdateId int64 `json:"update_id"`
-	Message  any
+	return response, nil
 }
