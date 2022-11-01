@@ -21,14 +21,30 @@ import (
 
 func main() {
 	result := callhttp()
-	//save_to_sqlite(result)
+	log.Printf("received: %v\n\n", result)
 
-	parsed, err := parse_json(result)
+	parsed, err := parseJson(result)
 	if err != nil {
 		fmt.Printf("error while parsing json %v\n", err)
 		return
 	}
 	log.Printf("res: %v\n", parsed)
+
+	var messageId float64
+	messageId = parsed.Result[0].Message.MessageId
+
+	var messageJson []byte
+	messageJson, err = json.Marshal(parsed.Result[0].Message)
+	if err != nil {
+		fmt.Printf("can't marshall json %v\n", err)
+		return
+	}
+	fmt.Printf("messageJson: %v\n\n", string(messageJson))
+
+	save_to_sqlite(
+		int32(messageId),
+		string(messageJson),
+	)
 }
 
 func callhttp() string {
@@ -49,11 +65,10 @@ func callhttp() string {
 	}
 	//Convert the body to type string
 	sb := string(body)
-	log.Printf("received: %v\n", sb)
 	return sb
 }
 
-func save_to_sqlite(sb string) {
+func save_to_sqlite(messageId int32, sb string) {
 	// The `sql.Open` function opens a new `*sql.DB` instance. We specify the driver name
 	// and the URI for our database. Here, we're using a Postgres URI
 	db, err := sql.Open("sqlite3", "db.sqlite")
@@ -68,7 +83,7 @@ func save_to_sqlite(sb string) {
 	}
 	fmt.Println("database is reachable")
 
-	res, err := db.Exec("INSERT INTO test VALUES(?)", sb)
+	res, err := db.Exec("INSERT INTO message VALUES(?,?)", messageId, sb)
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
@@ -96,7 +111,7 @@ func readToken() (*string, error) {
 	return nil, err
 }
 
-func parse_json(sb string) (*Response, error) {
+func parseJson(sb string) (*Response, error) {
 	bb := []byte(sb)
 
 	response := &Response{}

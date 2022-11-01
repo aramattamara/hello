@@ -6,10 +6,14 @@ type Response struct {
 }
 
 type Update struct {
-	UpdateId int64 `json:"update_id"`
+	UpdateId float64 `json:"update_id"`
 	Message  Message
 }
 
 type Message struct {
-	MessageId int32
+	MessageId float64 `json:"message_id"`
+	Date      float64
+	Text      string
+	From      any
+	Chat      any
 }
