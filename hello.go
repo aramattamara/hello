@@ -20,7 +20,7 @@ import (
 //	}
 
 func main() {
-	result := callhttp()
+	var result string = callHttp()
 	log.Printf("received: %v\n\n", result)
 
 	parsed, err := parseJson(result)
@@ -28,26 +28,28 @@ func main() {
 		fmt.Printf("error while parsing json %v\n", err)
 		return
 	}
-	log.Printf("res: %v\n", parsed)
+	log.Printf("res: %+v\n\n", parsed)
 
-	var messageId float64
-	messageId = parsed.Result[0].Message.MessageId
+	for _, v := range parsed.Result {
+		var messageId float64
+		messageId = v.Message.MessageId
 
-	var messageJson []byte
-	messageJson, err = json.Marshal(parsed.Result[0].Message)
-	if err != nil {
-		fmt.Printf("can't marshall json %v\n", err)
-		return
+		var messageJson []byte
+		messageJson, err = json.Marshal(v.Message)
+		if err != nil {
+			fmt.Printf("can't marshall json %v\n", err)
+			return
+		}
+		fmt.Printf("messageJson: %v\n\n", string(messageJson))
+
+		saveToSqlite(
+			int32(messageId),
+			string(messageJson),
+		)
 	}
-	fmt.Printf("messageJson: %v\n\n", string(messageJson))
-
-	save_to_sqlite(
-		int32(messageId),
-		string(messageJson),
-	)
 }
 
-func callhttp() string {
+func callHttp() string {
 	token, err := readToken()
 	if err != nil {
 		log.Panicf("Cannot get token: %v", err)
@@ -68,7 +70,7 @@ func callhttp() string {
 	return sb
 }
 
-func save_to_sqlite(messageId int32, sb string) {
+func saveToSqlite(messageId int32, sb string) {
 	// The `sql.Open` function opens a new `*sql.DB` instance. We specify the driver name
 	// and the URI for our database. Here, we're using a Postgres URI
 	db, err := sql.Open("sqlite3", "db.sqlite")
@@ -87,7 +89,10 @@ func save_to_sqlite(messageId int32, sb string) {
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
-	fmt.Printf("insert is succesful %v\n", res)
+	lastInsertId, err := res.LastInsertId()
+	rowsAffected, err := res.RowsAffected()
+	fmt.Printf("insert is succesful, LastInsertId: %v, RowsAffected: %v \n\n",
+		lastInsertId, rowsAffected)
 }
 
 func readToken() (*string, error) {
