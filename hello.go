@@ -20,7 +20,7 @@ import (
 //	}
 
 func main() {
-	result := callhttp()
+	var result string = callHttp()
 	log.Printf("received: %v\n\n", result)
 
 	parsed, err := parseJson(result)
@@ -28,26 +28,34 @@ func main() {
 		fmt.Printf("error while parsing json %v\n", err)
 		return
 	}
-	log.Printf("res: %v\n", parsed)
+	log.Printf("res: %+v\n\n", parsed)
 
-	var messageId float64
-	messageId = parsed.Result[0].Message.MessageId
+	for _, v := range parsed.Result {
+		message := v.Message
 
-	var messageJson []byte
-	messageJson, err = json.Marshal(parsed.Result[0].Message)
-	if err != nil {
-		fmt.Printf("can't marshall json %v\n", err)
-		return
+		if message == nil {
+			message = v.EditedMessage
+		}
+
+		var messageId float64
+		messageId = message.MessageId
+
+		var messageJson []byte
+		messageJson, err = json.Marshal(message)
+		if err != nil {
+			fmt.Printf("can't marshall json %v\n", err)
+			return
+		}
+		fmt.Printf("messageJson: %v\n\n", string(messageJson))
+
+		saveToSqlite(
+			int32(messageId),
+			string(messageJson),
+		)
 	}
-	fmt.Printf("messageJson: %v\n\n", string(messageJson))
-
-	save_to_sqlite(
-		int32(messageId),
-		string(messageJson),
-	)
 }
 
-func callhttp() string {
+func callHttp() string {
 	token, err := readToken()
 	if err != nil {
 		log.Panicf("Cannot get token: %v", err)
@@ -68,7 +76,7 @@ func callhttp() string {
 	return sb
 }
 
-func save_to_sqlite(messageId int32, sb string) {
+func saveToSqlite(messageId int32, sb string) {
 	// The `sql.Open` function opens a new `*sql.DB` instance. We specify the driver name
 	// and the URI for our database. Here, we're using a Postgres URI
 	db, err := sql.Open("sqlite3", "db.sqlite")
@@ -76,18 +84,14 @@ func save_to_sqlite(messageId int32, sb string) {
 		log.Fatalf("could not connect to database: %v", err)
 	}
 
-	// To verify the connection to our database instance, we can call the `Ping`
-	// method. If no error is returned, we can assume a successful connection
-	if err := db.Ping(); err != nil {
-		log.Fatalf("unable to reach database: %v", err)
-	}
-	fmt.Println("database is reachable")
-
-	res, err := db.Exec("INSERT INTO message VALUES(?,?)", messageId, sb)
+	res, err := db.Exec("INSERT OR REPLACE INTO message VALUES(?,?)", messageId, sb)
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
-	fmt.Printf("insert is succesful %v\n", res)
+	lastInsertId, err := res.LastInsertId()
+	rowsAffected, err := res.RowsAffected()
+	fmt.Printf("insert is succesful, LastInsertId: %v, RowsAffected: %v \n\n",
+		lastInsertId, rowsAffected)
 }
 
 func readToken() (*string, error) {

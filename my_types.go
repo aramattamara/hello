@@ -6,8 +6,9 @@ type Response struct {
 }
 
 type Update struct {
-	UpdateId float64 `json:"update_id"`
-	Message  Message
+	UpdateId      float64 `json:"update_id"`
+	Message       *Message
+	EditedMessage *Message `json:"edited_message"`
 }
 
 type Message struct {

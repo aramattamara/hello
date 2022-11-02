@@ -16,5 +16,6 @@
         <method importPath="os" receiver="*File" name="Close" />
       </methods>
     </inspection_tool>
+    <inspection_tool class="GoVarAndConstTypeMayBeOmitted" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
   </profile>
 </component>

@@ -1,6 +1,5 @@
 ## Todo
-* split response to messeges
-* save the parse json in table message
+* save all messages in table message
 * write tg bot response to db
 
 ## Done
@@ -10,3 +9,5 @@
 * write smth to db
 * send https request to /getUpdates in tg bot
 * create new table "messege" with two columns: id - primary key and json 
+* split response to messeges
+* save the parse json in table message
