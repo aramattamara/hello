@@ -31,11 +31,17 @@ func main() {
 	log.Printf("res: %+v\n\n", parsed)
 
 	for _, v := range parsed.Result {
+		message := v.Message
+
+		if message == nil {
+			message = v.EditedMessage
+		}
+
 		var messageId float64
-		messageId = v.Message.MessageId
+		messageId = message.MessageId
 
 		var messageJson []byte
-		messageJson, err = json.Marshal(v.Message)
+		messageJson, err = json.Marshal(message)
 		if err != nil {
 			fmt.Printf("can't marshall json %v\n", err)
 			return
@@ -78,14 +84,7 @@ func saveToSqlite(messageId int32, sb string) {
 		log.Fatalf("could not connect to database: %v", err)
 	}
 
-	// To verify the connection to our database instance, we can call the `Ping`
-	// method. If no error is returned, we can assume a successful connection
-	if err := db.Ping(); err != nil {
-		log.Fatalf("unable to reach database: %v", err)
-	}
-	fmt.Println("database is reachable")
-
-	res, err := db.Exec("INSERT INTO message VALUES(?,?)", messageId, sb)
+	res, err := db.Exec("INSERT OR REPLACE INTO message VALUES(?,?)", messageId, sb)
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
