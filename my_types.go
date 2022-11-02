@@ -15,6 +15,10 @@ type Message struct {
 	MessageId float64 `json:"message_id"`
 	Date      float64
 	Text      string
-	From      any
+	From      From
 	Chat      any
+}
+
+type From struct {
+	Username string
 }

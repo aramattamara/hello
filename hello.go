@@ -48,9 +48,13 @@ func main() {
 		}
 		fmt.Printf("messageJson: %v\n\n", string(messageJson))
 
+		var fromUsername string
+		fromUsername = message.From.Username
+
 		saveToSqlite(
 			int32(messageId),
 			string(messageJson),
+			(fromUsername),
 		)
 	}
 }
@@ -76,7 +80,7 @@ func callHttp() string {
 	return sb
 }
 
-func saveToSqlite(messageId int32, sb string) {
+func saveToSqlite(messageId int32, sb string, fromUsername string) {
 	// The `sql.Open` function opens a new `*sql.DB` instance. We specify the driver name
 	// and the URI for our database. Here, we're using a Postgres URI
 	db, err := sql.Open("sqlite3", "db.sqlite")
@@ -84,7 +88,8 @@ func saveToSqlite(messageId int32, sb string) {
 		log.Fatalf("could not connect to database: %v", err)
 	}
 
-	res, err := db.Exec("INSERT OR REPLACE INTO message VALUES(?,?)", messageId, sb)
+	res, err := db.Exec("INSERT OR REPLACE INTO message(id, from_username, content) VALUES(?,?,?)",
+		messageId, fromUsername, sb)
 	if err != nil {
 		log.Fatalf("unable to insert data in database: %v", err)
 	}
