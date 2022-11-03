@@ -1,7 +1,13 @@
 ## Todo
-* 
+* install docker on local 
+* create Dockerfile
 * getUpdate every 24h
 * write tg bot response to db
+
+
+## Done 02/11/2022
+* run from commandline
+
 
 ## Done
 * create pull request and use logging

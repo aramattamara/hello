@@ -2,14 +2,17 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"io"
 	"log"
 	"net/http"
 	"os"
 
+	_ "github.com/jackc/pgx/v5"
 	// we have to import the driver, but don't use it in our code
 	// so we use the `_` symbol
 	_ "github.com/mattn/go-sqlite3"
@@ -51,10 +54,15 @@ func main() {
 		var fromUsername string
 		fromUsername = message.From.Username
 
-		saveToSqlite(
+		//saveToSqlite(
+		//	int32(messageId),
+		//	string(messageJson),
+		//	fromUsername,
+		//)
+		saveToPostgres(
 			int32(messageId),
 			string(messageJson),
-			(fromUsername),
+			fromUsername,
 		)
 	}
 }
@@ -78,6 +86,25 @@ func callHttp() string {
 	//Convert the body to type string
 	sb := string(body)
 	return sb
+}
+
+func saveToPostgres(messageId int32, sb string, fromUsername string) {
+	url := "postgres://tamara@localhost:5432/tamara"
+	//url := os.Getenv("DATABASE_URL")
+	db, err := pgx.Connect(context.Background(), url)
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v\n", err)
+	}
+	defer db.Close(context.Background())
+
+	res, err := db.Exec(context.Background(),
+		"INSERT INTO message(id, from_username, content) VALUES($1, $2, $3) ON CONFLICT (id) DO UPDATE SET content=$3, from_username=$2",
+		messageId, fromUsername, sb)
+	if err != nil {
+		log.Fatalf("unable to insert data in database: %v", err)
+	}
+	rowsAffected := res.RowsAffected()
+	fmt.Printf("insert is succesful, RowsAffected: %v \n\n", rowsAffected)
 }
 
 func saveToSqlite(messageId int32, sb string, fromUsername string) {
