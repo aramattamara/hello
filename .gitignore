@@ -3,5 +3,4 @@ logs.txt
 output.txt
 input.txt
 token.txt
-
-.idea/misc.xml
+/hello
