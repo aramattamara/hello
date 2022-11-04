@@ -5,14 +5,14 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5"
 	"io"
 	"log"
 	"net/http"
 	"os"
-
-	_ "github.com/jackc/pgx/v5"
 	// we have to import the driver, but don't use it in our code
 	// so we use the `_` symbol
 	_ "github.com/mattn/go-sqlite3"
@@ -32,6 +32,20 @@ func main() {
 		return
 	}
 	log.Printf("res: %+v\n\n", parsed)
+
+	var dbUrl string = *flag.String("db.url", "",
+		"Like 'postgres://tamara@localhost:5432/tamara'")
+	if dbUrl == "" {
+		err = fmt.Errorf("pass --db.url")
+		log.Fatal(err)
+	}
+
+	var db *pgx.Conn
+	db, err = pgx.Connect(context.Background(), dbUrl)
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v\n", err)
+	}
+	defer db.Close(context.Background())
 
 	for _, v := range parsed.Result {
 		message := v.Message
@@ -54,12 +68,8 @@ func main() {
 		var fromUsername string
 		fromUsername = message.From.Username
 
-		//saveToSqlite(
-		//	int32(messageId),
-		//	string(messageJson),
-		//	fromUsername,
-		//)
 		saveToPostgres(
+			db,
 			int32(messageId),
 			string(messageJson),
 			fromUsername,
@@ -88,15 +98,7 @@ func callHttp() string {
 	return sb
 }
 
-func saveToPostgres(messageId int32, sb string, fromUsername string) {
-	url := "postgres://tamara@localhost:5432/tamara"
-	//url := os.Getenv("DATABASE_URL")
-	db, err := pgx.Connect(context.Background(), url)
-	if err != nil {
-		log.Fatalf("Unable to connect to database: %v\n", err)
-	}
-	defer db.Close(context.Background())
-
+func saveToPostgres(db *pgx.Conn, messageId int32, sb string, fromUsername string) {
 	res, err := db.Exec(context.Background(),
 		"INSERT INTO message(id, from_username, content) VALUES($1, $2, $3) ON CONFLICT (id) DO UPDATE SET content=$3, from_username=$2",
 		messageId, fromUsername, sb)
@@ -107,10 +109,10 @@ func saveToPostgres(messageId int32, sb string, fromUsername string) {
 	fmt.Printf("insert is succesful, RowsAffected: %v \n\n", rowsAffected)
 }
 
-func saveToSqlite(messageId int32, sb string, fromUsername string) {
+func saveToSqlite(fileName string, messageId int32, sb string, fromUsername string) {
 	// The `sql.Open` function opens a new `*sql.DB` instance. We specify the driver name
 	// and the URI for our database. Here, we're using a Postgres URI
-	db, err := sql.Open("sqlite3", "db.sqlite")
+	db, err := sql.Open("sqlite3", fileName)
 	if err != nil {
 		log.Fatalf("could not connect to database: %v", err)
 	}
