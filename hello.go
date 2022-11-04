@@ -18,11 +18,18 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//	func main() {
-//		fmt.Println("Hello, World!")
-//	}
+var (
+	dbUrl *string = flag.String("db.url", "",
+		"Like 'postgres://tamara@localhost:5432/tamara'")
+)
 
 func main() {
+	flag.Parse()
+	if *dbUrl == "" {
+		var err = fmt.Errorf("pass --db.url")
+		log.Fatal(err)
+	}
+
 	var result string = callHttp()
 	log.Printf("received: %v\n\n", result)
 
@@ -33,15 +40,8 @@ func main() {
 	}
 	log.Printf("res: %+v\n\n", parsed)
 
-	var dbUrl string = *flag.String("db.url", "",
-		"Like 'postgres://tamara@localhost:5432/tamara'")
-	if dbUrl == "" {
-		err = fmt.Errorf("pass --db.url")
-		log.Fatal(err)
-	}
-
 	var db *pgx.Conn
-	db, err = pgx.Connect(context.Background(), dbUrl)
+	db, err = pgx.Connect(context.Background(), *dbUrl)
 	if err != nil {
 		log.Fatalf("Unable to connect to database: %v\n", err)
 	}
